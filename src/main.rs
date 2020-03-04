@@ -1,9 +1,11 @@
 #![warn(clippy::pedantic)]
 
 mod game;
+mod utility_ai;
 mod utils;
 
 use game::*;
+use utility_ai::*;
 
 #[derive(Default, Debug)]
 pub struct State {
@@ -19,83 +21,89 @@ impl State {
 }
 
 pub struct DecisionContext {
-  pub current_agent: Agent,
+  pub agent: Agent,
   pub targets: Vec<Agent>,
   // pub urgent_events: ...,
   // pub blackboard: Blackboard<TKey>,
 }
 
-pub struct Consideration<TContext> {
-  pub name: &'static str,
-  // pub response_curve: ResponseCurve,
-  pub score: Box<dyn Fn(&TContext) -> f32>,
-}
-
-pub struct Decision<TContext> {
-  pub name: &'static str, // "Eat a Meal"
-  pub considerations: Vec<Consideration<TContext>>,
-}
-
-impl<TContext> Decision<TContext> {
+impl DecisionContext {
   #[must_use]
-  #[allow(clippy::cast_precision_loss)]
-  pub fn score(&self, context: &TContext) -> f32 {
-    let mut score = 1.0;
-    for consideration in &self.considerations {
-      score *= (consideration.score)(context);
-    }
-
-    let mod_factor = 1.0 - (1.0 / self.considerations.len() as f32);
-    let make_up_value = (1.0 - score) * mod_factor;
-
-    score + (make_up_value * score)
+  pub fn agent(&self) -> &Agent {
+    &self.agent
   }
 }
 
 // pub struct DecisionActionPair<T>(Decision, T);
-
 // type Action = Vec<State>
 // type DecisionMaker = (Decision, Action)
 // Vec<DecisionMaker>
 
 fn main() {
   pretty_env_logger::init();
+}
 
-  let mut agent = Agent::new(String::from("Crash Test Dummy"));
-  agent.tick(50.0);
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use maplit::hashmap;
+  use std::collections::HashMap;
 
-  let context = DecisionContext {
-    current_agent: agent,
-    targets: vec![],
-  };
+  #[test]
+  fn test_scoring() {
+    let consideration_hunger_level = Input::<DecisionContext> {
+      name: "Hunger Level (self)",
+      score: Box::new(|ctx, _params| {
+        let hunger = &ctx.agent().needs.hunger;
+        hunger.current / hunger.max()
+      }),
+    };
+    let consideration_distance_to_cafeteria = Input::<DecisionContext> {
+      name: "Distance to cafeteria (self)",
+      score: Box::new(|ctx, params| {
+        if let Some(InputParam::Float(max_range)) = params.get(&"max_range") {
+          let dist_to_cafeteria = &ctx.agent().location.travel_time(Location::Cafeteria);
+          dist_to_cafeteria / max_range
+        } else {
+          0.0
+        }
+      }),
+    };
+    let mut agent = Agent::new(String::from("Crash Test Dummy"));
+    agent.tick(50.0);
+    let context = DecisionContext {
+      agent,
+      targets: vec![],
+    };
+    let eat_a_meal = Decision::<DecisionContext> {
+      name: "Eat a Meal",
+      targetable: false,
+      considerations: vec![
+        Consideration {
+          name: "Am I hungry?",
+          input: consideration_hunger_level,
+          params: HashMap::default(),
+          response_curve: ResponseCurve::Linear {
+            slope: -1.0,
+            x_shift: 0.0,
+            y_shift: 1.0,
+          },
+        },
+        Consideration {
+          name: "Am I near the cafeteria?",
+          input: consideration_distance_to_cafeteria,
+          params: hashmap! {
+            "max_range" => InputParam::Float(4.0)
+          },
+          response_curve: ResponseCurve::Linear {
+            slope: -1.0,
+            x_shift: 0.0,
+            y_shift: 1.0,
+          },
+        },
+      ],
+    };
 
-  let eat_a_meal = Decision::<DecisionContext> {
-    name: "Eat a Meal",
-    considerations: vec![
-      Consideration {
-        name: "Am I hungry?",
-        score: Box::new(|ctx| {
-          let hunger = &ctx.current_agent.needs.hunger;
-
-          hunger.current / hunger.max()
-        }),
-      },
-      Consideration {
-        name: "Am I near the cafeteria?",
-        score: Box::new(|ctx| {
-          use std::f32::EPSILON;
-
-          let dist_to_cafeteria = &ctx.current_agent.location.travel_time(Location::Cafeteria);
-
-          if dist_to_cafeteria < &EPSILON {
-            1.0
-          } else {
-            1.0 - (dist_to_cafeteria / Location::max_distance())
-          }
-        }),
-      },
-    ],
-  };
-
-  println!("Eat a Meal: {}", eat_a_meal.score(&context));
+    assert!((eat_a_meal.score(&context) - 0.492_187_5).abs() < std::f32::EPSILON);
+  }
 }

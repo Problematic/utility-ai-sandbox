@@ -11,3 +11,4 @@ log = "0.4.8"
 pretty_env_logger = "0.4.0"
 serde = { version = "1.0.104", features = ["serde_derive"] }
 ron = "0.5.1"
+maplit = "1.0.2"

@@ -16,11 +16,6 @@ impl Location {
     }
   }
 
-  /// maximum distance between any two locations
-  pub fn max_distance() -> f32 {
-    Self::Work.travel_time(Self::Lounge)
-  }
-
   #[allow(clippy::cast_precision_loss)]
   pub fn travel_time(self, to: Self) -> f32 {
     let start = self.travel_value();
