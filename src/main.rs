@@ -4,7 +4,6 @@ mod game;
 mod utils;
 
 use game::*;
-use std::time::{Duration, Instant};
 
 #[derive(Default, Debug)]
 pub struct State {
@@ -19,29 +18,84 @@ impl State {
   }
 }
 
+pub struct DecisionContext {
+  pub current_agent: Agent,
+  pub targets: Vec<Agent>,
+  // pub urgent_events: ...,
+  // pub blackboard: Blackboard<TKey>,
+}
+
+pub struct Consideration<TContext> {
+  pub name: &'static str,
+  // pub response_curve: ResponseCurve,
+  pub score: Box<dyn Fn(&TContext) -> f32>,
+}
+
+pub struct Decision<TContext> {
+  pub name: &'static str, // "Eat a Meal"
+  pub considerations: Vec<Consideration<TContext>>,
+}
+
+impl<TContext> Decision<TContext> {
+  #[must_use]
+  #[allow(clippy::cast_precision_loss)]
+  pub fn score(&self, context: &TContext) -> f32 {
+    let mut score = 1.0;
+    for consideration in &self.considerations {
+      score *= (consideration.score)(context);
+    }
+
+    let mod_factor = 1.0 - (1.0 / self.considerations.len() as f32);
+    let make_up_value = (1.0 - score) * mod_factor;
+
+    score + (make_up_value * score)
+  }
+}
+
+// pub struct DecisionActionPair<T>(Decision, T);
+
+// type Action = Vec<State>
+// type DecisionMaker = (Decision, Action)
+// Vec<DecisionMaker>
+
 fn main() {
   pretty_env_logger::init();
 
-  let mut agents = Vec::new();
+  let mut agent = Agent::new(String::from("Crash Test Dummy"));
+  agent.tick(50.0);
 
-  for i in 1..=5 {
-    let agent = Agent::new(format!("Vaultizen #{:03}", i));
-    agents.push(agent);
-  }
+  let context = DecisionContext {
+    current_agent: agent,
+    targets: vec![],
+  };
 
-  let mut state = State { agents };
+  let eat_a_meal = Decision::<DecisionContext> {
+    name: "Eat a Meal",
+    considerations: vec![
+      Consideration {
+        name: "Am I hungry?",
+        score: Box::new(|ctx| {
+          let hunger = &ctx.current_agent.needs.hunger;
 
-  let mut now = Instant::now();
-  loop {
-    let dt = now.elapsed().as_secs_f32();
-    now = Instant::now();
+          hunger.current / hunger.max()
+        }),
+      },
+      Consideration {
+        name: "Am I near the cafeteria?",
+        score: Box::new(|ctx| {
+          use std::f32::EPSILON;
 
-    log::trace!("dt: {}", dt);
+          let dist_to_cafeteria = &ctx.current_agent.location.travel_time(Location::Cafeteria);
 
-    state.tick(dt);
+          if dist_to_cafeteria < &EPSILON {
+            1.0
+          } else {
+            1.0 - (dist_to_cafeteria / Location::max_distance())
+          }
+        }),
+      },
+    ],
+  };
 
-    log::info!("{:#?}", state);
-
-    std::thread::sleep(Duration::from_secs_f32(1.0 / 5.0));
-  }
+  println!("Eat a Meal: {}", eat_a_meal.score(&context));
 }

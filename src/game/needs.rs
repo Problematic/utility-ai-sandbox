@@ -8,6 +8,16 @@ pub struct Attribute {
   max: f32,
 }
 
+impl Attribute {
+  pub fn min(&self) -> f32 {
+    self.min
+  }
+
+  pub fn max(&self) -> f32 {
+    self.max
+  }
+}
+
 impl Default for Attribute {
   fn default() -> Self {
     Self {
