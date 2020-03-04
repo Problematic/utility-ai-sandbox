@@ -1,12 +1,5 @@
-use super::ResponseCurve;
+use super::{InputParam, ResponseCurve};
 use std::collections::HashMap;
-
-#[allow(dead_code)]
-pub enum InputParam {
-  String(String),
-  Float(f32),
-  Bool(bool),
-}
 
 pub struct Consideration<TContext, TParamKey = &'static str> {
   pub name: &'static str,

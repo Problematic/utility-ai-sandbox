@@ -29,20 +29,26 @@ impl State {
 /// TODO: This implies that a `Decision` receives or has a way to fetch
 /// a list of all relevant targets for the current decision, so that it
 /// can score them all individually.
-pub struct DecisionContext {
+pub struct Context {
   pub agent: Agent,
   pub target: Option<Agent>,
 }
 
-impl DecisionContext {
-  #[must_use]
-  pub fn agent(&self) -> &Agent {
+impl Context {
+  pub fn new(agent: Agent, target: Option<Agent>) -> Self {
+    Self { agent, target }
+  }
+}
+
+impl DecisionContext for Context {
+  type Agent = Agent;
+
+  fn agent(&self) -> &Agent {
     &self.agent
   }
 
-  #[must_use]
-  pub fn target(&self) -> &Option<Agent> {
-    &self.target
+  fn target(&self) -> Option<&Agent> {
+    self.target.as_ref()
   }
 }
 
@@ -68,6 +74,8 @@ impl Action {
       Self::Socialize => {
         if let Some(target) = target {
           agent.talk_to(target);
+        } else {
+          log::warn!("{} is talking to themselves again.", agent.name);
         }
       }
     }
@@ -86,14 +94,14 @@ mod tests {
 
   #[test]
   fn test_scoring() {
-    let consideration_hunger_level = Input::<DecisionContext> {
+    let consideration_hunger_level = Input::<Context> {
       name: "Hunger Level (self)",
       score: Box::new(|ctx, _params| {
         let hunger = &ctx.agent().needs.hunger;
         hunger.current / hunger.max()
       }),
     };
-    let consideration_distance_to_cafeteria = Input::<DecisionContext> {
+    let consideration_distance_to_cafeteria = Input::<Context> {
       name: "Distance to cafeteria (self)",
       score: Box::new(|ctx, params| {
         if let Some(InputParam::Float(max_range)) = params.get(&"max_range") {
@@ -108,12 +116,9 @@ mod tests {
     let mut agent = Agent::new(String::from("Crash Test Dummy"));
     agent.tick(50.0);
 
-    let context = DecisionContext {
-      agent,
-      target: None,
-    };
+    let context = Context::new(agent, None);
 
-    let eat_a_meal = Decision::<DecisionContext> {
+    let eat_a_meal = Decision::<Context> {
       name: "Eat a Meal",
       targetable: false,
       considerations: vec![
@@ -142,6 +147,24 @@ mod tests {
       ],
     };
 
-    assert!((eat_a_meal.score(&context) - 0.492_187_5).abs() < std::f32::EPSILON);
+    assert!((eat_a_meal.score(&context, 1.0, 0.0) - 0.492_187_5).abs() < std::f32::EPSILON);
+
+    let empty_decision = Decision::<Context> {
+      name: "Empty Decision",
+      targetable: false,
+      considerations: vec![],
+    };
+
+    assert!(empty_decision.score(&context, 1.0, 0.0) < std::f32::EPSILON);
+
+    let decision_maker = DecisionMaker::<Context> {
+      name: "Crash Test Dummy",
+      decisions: vec![DMEntry(eat_a_meal, 1.0), DMEntry(empty_decision, 1.0)],
+    };
+
+    assert_eq!(
+      "Eat a Meal",
+      decision_maker.evaluate(&context).unwrap().name
+    );
   }
 }

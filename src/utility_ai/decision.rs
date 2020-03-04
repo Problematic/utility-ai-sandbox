@@ -1,5 +1,18 @@
 use super::Consideration;
 
+/// `Decision`s are actions linked to a game-specific code function, an
+/// abstraction that lets the AI system ignore the implications of an
+/// action and just tell an agent "go do [something]".
+///
+/// - Execute a skill
+/// - Perform movement to a location
+/// - Call an animation
+/// - Run a script action
+///
+/// Examples:
+/// - "Warrior Axe Melee"
+/// - "Move to Safe Spot"
+/// - "Play Emote [wave]"
 pub struct Decision<TContext, TParamKey = &'static str> {
   pub name: &'static str, // "Eat a Meal"
   pub targetable: bool,
@@ -9,9 +22,17 @@ pub struct Decision<TContext, TParamKey = &'static str> {
 impl<TContext, TParamKey> Decision<TContext, TParamKey> {
   #[must_use]
   #[allow(clippy::cast_precision_loss)]
-  pub fn score(&self, context: &TContext) -> f32 {
-    let mut score = 1.0;
+  pub fn score(&self, context: &TContext, initial: f32, threshold: f32) -> f32 {
+    if self.considerations.is_empty() {
+      return 0.0;
+    }
+
+    let mut score = initial;
     for consideration in &self.considerations {
+      if score < threshold {
+        break;
+      }
+
       let val = consideration
         .response_curve
         .evaluate((consideration.input.score)(context, &consideration.params));
