@@ -20,11 +20,18 @@ impl State {
   }
 }
 
+/// A `DecisionContext` is only valid in the context of the current
+/// decision (it's right there in the name), and so only needs to
+/// reference at most one target. Additionally, it includes whatever
+/// game-specific data or functions might be useful in evaluating a
+/// given `Consideration`.
+///
+/// TODO: This implies that a `Decision` receives or has a way to fetch
+/// a list of all relevant targets for the current decision, so that it
+/// can score them all individually.
 pub struct DecisionContext {
   pub agent: Agent,
-  pub targets: Vec<Agent>,
-  // pub urgent_events: ...,
-  // pub blackboard: Blackboard<TKey>,
+  pub target: Option<Agent>,
 }
 
 impl DecisionContext {
@@ -32,12 +39,40 @@ impl DecisionContext {
   pub fn agent(&self) -> &Agent {
     &self.agent
   }
+
+  #[must_use]
+  pub fn target(&self) -> &Option<Agent> {
+    &self.target
+  }
 }
 
-// pub struct DecisionActionPair<T>(Decision, T);
-// type Action = Vec<State>
-// type DecisionMaker = (Decision, Action)
-// Vec<DecisionMaker>
+pub enum Action {
+  Eat,
+  Sleep,
+  Work,
+  Socialize,
+}
+
+impl Action {
+  pub fn execute(self, agent: &mut Agent, target: Option<&Agent>) {
+    match self {
+      Self::Eat => {
+        agent.eat(750.0);
+      }
+      Self::Sleep => {
+        agent.sleep(8.0);
+      }
+      Self::Work => {
+        agent.work(8.0);
+      }
+      Self::Socialize => {
+        if let Some(target) = target {
+          agent.talk_to(target);
+        }
+      }
+    }
+  }
+}
 
 fn main() {
   pretty_env_logger::init();
@@ -69,12 +104,15 @@ mod tests {
         }
       }),
     };
+
     let mut agent = Agent::new(String::from("Crash Test Dummy"));
     agent.tick(50.0);
+
     let context = DecisionContext {
       agent,
-      targets: vec![],
+      target: None,
     };
+
     let eat_a_meal = Decision::<DecisionContext> {
       name: "Eat a Meal",
       targetable: false,

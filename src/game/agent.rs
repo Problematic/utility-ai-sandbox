@@ -47,6 +47,7 @@ impl Agent {
   }
 
   /// Currently any chat will restore social to full
+  ///
   /// TODO: adjust by relationship to other agent
   pub fn talk_to(&mut self, other: &Agent) {
     let res = 100.0;
