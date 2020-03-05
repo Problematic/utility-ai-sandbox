@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Location {
   Lounge,
   Quarters,
@@ -16,12 +18,25 @@ impl Location {
     }
   }
 
-  #[allow(clippy::cast_precision_loss)]
   pub fn travel_time(self, to: Self) -> f32 {
     let start = self.travel_value();
     let end = to.travel_value();
 
-    (start - end).abs() as f32
+    (start - end).abs()
+  }
+}
+
+use std::fmt;
+impl fmt::Display for Location {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let s = match self {
+      Self::Lounge => "Lounge",
+      Self::Quarters => "Quarters",
+      Self::Cafeteria => "Cafeteria",
+      Self::Work => "Work",
+    };
+
+    write!(f, "{}", s)
   }
 }
 
@@ -32,11 +47,11 @@ mod tests {
 
   #[test]
   fn test_travel_time() {
-    assert!(Location::Lounge.travel_time(Location::Work) - 4.0 < EPSILON);
-    assert!(Location::Work.travel_time(Location::Lounge) - 4.0 < EPSILON);
+    assert!((Location::Lounge.travel_time(Location::Work) - 4.0).abs() < EPSILON);
+    assert!((Location::Work.travel_time(Location::Lounge) - 4.0).abs() < EPSILON);
 
-    assert!(Location::Quarters.travel_time(Location::Cafeteria) - 1.0 < EPSILON);
+    assert!((Location::Quarters.travel_time(Location::Cafeteria) - 1.0).abs() < EPSILON);
 
-    assert!(Location::Quarters.travel_time(Location::Quarters) < EPSILON);
+    assert!(Location::Quarters.travel_time(Location::Quarters).abs() < EPSILON);
   }
 }

@@ -1,8 +1,12 @@
 use crate::utils;
+use serde::{Deserialize, Serialize};
 
 #[allow(dead_code)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum ResponseCurve {
-  Linear {
+  Linear,
+  InverseLinear,
+  CustomLinear {
     slope: f32,
     x_shift: f32,
     y_shift: f32,
@@ -42,7 +46,9 @@ impl ResponseCurve {
     let x = utils::clamp(x, 0.0, 1.0);
 
     let y = match self {
-      Self::Linear {
+      Self::Linear => x,
+      Self::InverseLinear => -x + 1.0,
+      Self::CustomLinear {
         slope,
         x_shift,
         y_shift,

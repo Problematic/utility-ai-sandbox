@@ -1,14 +1,21 @@
-use super::{InputParam, ResponseCurve};
-use std::collections::HashMap;
+use super::response_curve::ResponseCurve;
+use super::traits::Scorable;
+use serde::{Deserialize, Serialize};
 
-pub struct Consideration<TContext, TParamKey = &'static str> {
-  pub name: &'static str,
-  pub input: Input<TContext, TParamKey>,
-  pub params: HashMap<TParamKey, InputParam>,
-  pub response_curve: ResponseCurve,
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Consideration<TInput> {
+  pub name: String,
+  input: TInput,
+  response_curve: ResponseCurve,
 }
 
-pub struct Input<TContext, TParamKey = &'static str> {
-  pub name: &'static str,
-  pub score: Box<dyn Fn(&TContext, &HashMap<TParamKey, InputParam>) -> f32>,
+impl<'a, TInput> Scorable<'a> for Consideration<TInput>
+where
+  TInput: Scorable<'a>,
+{
+  type Context = TInput::Context;
+
+  fn score(&self, context: &TInput::Context) -> f32 {
+    self.response_curve.evaluate(self.input.score(context))
+  }
 }

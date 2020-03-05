@@ -1,7 +1,8 @@
 use super::location::Location;
 use super::needs::Needs;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Agent {
   pub name: String,
   pub location: Location,

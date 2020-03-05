@@ -1,7 +1,8 @@
 use crate::utils;
+use serde::{Deserialize, Serialize};
 use std::ops;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Attribute {
   pub current: f32,
   min: f32,
@@ -47,7 +48,7 @@ impl fmt::Display for Attribute {
   }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Needs {
   pub social: Attribute,
   pub hunger: Attribute,

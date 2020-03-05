@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Eat a Meal",
+    "considerations": [
+      {
+        "name": "Am I hungry?",
+        "input": { "NeedLevel": "Hunger" },
+        "response_curve": "Linear"
+      },
+      {
+        "name": "Am I near the cafeteria?",
+        "input": {
+          "DistanceTo": {
+            "location": "Cafeteria",
+            "max_range": 4.0
+          }
+        },
+        "response_curve": "InverseLinear"
+      }
+    ]
+  }
+]

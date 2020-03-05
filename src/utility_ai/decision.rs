@@ -1,45 +1,29 @@
-use super::Consideration;
+use super::consideration::Consideration;
+use super::traits::Scorable;
+use serde::{Deserialize, Serialize};
 
-/// `Decision`s are actions linked to a game-specific code function, an
-/// abstraction that lets the AI system ignore the implications of an
-/// action and just tell an agent "go do [something]".
-///
-/// - Execute a skill
-/// - Perform movement to a location
-/// - Call an animation
-/// - Run a script action
-///
-/// Examples:
-/// - "Warrior Axe Melee"
-/// - "Move to Safe Spot"
-/// - "Play Emote [wave]"
-pub struct Decision<TContext, TParamKey = &'static str> {
-  pub name: &'static str, // "Eat a Meal"
-  pub targetable: bool,
-  pub considerations: Vec<Consideration<TContext, TParamKey>>,
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Decision<TInput> {
+  pub name: String,
+  considerations: Vec<Consideration<TInput>>,
 }
 
-impl<TContext, TParamKey> Decision<TContext, TParamKey> {
-  #[must_use]
+impl<'a, TInput> Scorable<'a> for Decision<TInput>
+where
+  TInput: Scorable<'a>,
+{
+  type Context = TInput::Context;
+
   #[allow(clippy::cast_precision_loss)]
-  pub fn score(&self, context: &TContext, initial: f32, threshold: f32) -> f32 {
+  fn score(&self, context: &TInput::Context) -> f32 {
     if self.considerations.is_empty() {
       return 0.0;
     }
 
+    let initial = 1.0;
     let mut score = initial;
     for consideration in &self.considerations {
-      if score < threshold {
-        break;
-      }
-
-      let val = consideration
-        .response_curve
-        .evaluate((consideration.input.score)(context, &consideration.params));
-
-      log::debug!("{}: {}", consideration.name, val);
-
-      score *= val;
+      score *= consideration.score(context);
     }
 
     let mod_factor = 1.0 - (1.0 / self.considerations.len() as f32);
