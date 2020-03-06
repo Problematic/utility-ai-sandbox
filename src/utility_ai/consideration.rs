@@ -1,5 +1,5 @@
 use super::response_curve::ResponseCurve;
-use super::traits::Scorable;
+use super::traits::Score;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -9,9 +9,9 @@ pub struct Consideration<TInput> {
   response_curve: ResponseCurve,
 }
 
-impl<'a, TInput> Scorable<'a> for Consideration<TInput>
+impl<'a, TInput> Score<'a> for Consideration<TInput>
 where
-  TInput: Scorable<'a>,
+  TInput: Score<'a>,
 {
   type Context = TInput::Context;
 

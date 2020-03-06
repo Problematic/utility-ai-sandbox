@@ -1,16 +1,23 @@
 use super::consideration::Consideration;
-use super::traits::Scorable;
+use super::traits::Score;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Decision<TInput> {
   pub name: String,
+  weight: f32,
   considerations: Vec<Consideration<TInput>>,
 }
 
-impl<'a, TInput> Scorable<'a> for Decision<TInput>
+impl<TInput> Decision<TInput> {
+  pub fn weight(&self) -> f32 {
+    self.weight
+  }
+}
+
+impl<'a, TInput> Score<'a> for Decision<TInput>
 where
-  TInput: Scorable<'a>,
+  TInput: Score<'a>,
 {
   type Context = TInput::Context;
 
@@ -21,14 +28,17 @@ where
     }
 
     let initial = 1.0;
-    let mut score = initial;
+    let mut result = initial;
     for consideration in &self.considerations {
-      score *= consideration.score(context);
+      let score = consideration.score(context);
+      log::debug!("{}: {}", consideration.name, score);
+
+      result *= consideration.score(context);
     }
 
     let mod_factor = 1.0 - (1.0 / self.considerations.len() as f32);
-    let make_up_value = (1.0 - score) * mod_factor;
+    let make_up_value = (1.0 - result) * mod_factor;
 
-    score + (make_up_value * score)
+    result + (make_up_value * result)
   }
 }

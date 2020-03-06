@@ -1,50 +1,35 @@
-use super::Decision;
+use super::decision::Decision;
+use super::traits::Score;
+use serde::{Deserialize, Serialize};
 
-pub struct DMEntry<TContext, TParamKey = &'static str>(pub Decision<TContext, TParamKey>, pub f32);
-
-#[allow(clippy::module_name_repetitions)]
-pub struct DecisionMaker<TContext, TParamKey = &'static str> {
-  pub name: &'static str,
-  //pub score_strategy: ScoreStrategy,
-  pub decisions: Vec<DMEntry<TContext, TParamKey>>,
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DecisionMaker<TInput> {
+  decisions: Vec<Decision<TInput>>,
 }
 
-impl<TContext, TParamKey> DecisionMaker<TContext, TParamKey> {
-  pub fn evaluate(&self, context: &TContext) -> Option<&Decision<TContext, TParamKey>> {
+impl<'a, TInput> DecisionMaker<TInput>
+where
+  TInput: Score<'a>,
+{
+  #[must_use]
+  pub fn evaluate(&self, context: &TInput::Context) -> (Option<&Decision<TInput>>, f32) {
     let mut threshold = 0.0;
-    let mut res = None;
+    let mut selected = None;
 
-    for DMEntry(decision, bonus) in &self.decisions {
-      if *bonus < threshold {
+    for decision in &self.decisions {
+      if decision.weight() <= threshold {
         continue;
       }
-      let score = decision.score(context, *bonus, threshold) * *bonus;
+
+      let score = decision.weight() * decision.score(context);
+      log::debug!("{}: {}", decision.name, score);
 
       if score > threshold {
         threshold = score;
-
-        res = Some(decision);
+        selected = Some(decision);
       }
     }
 
-    res
-  }
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[derive(Default)]
-  struct TestContext;
-
-  #[test]
-  fn test_empty_evaluation() {
-    let dm = DecisionMaker::<TestContext> {
-      name: "test",
-      decisions: vec![],
-    };
-
-    assert!(dm.evaluate(&TestContext::default()).is_none());
+    (selected, threshold)
   }
 }

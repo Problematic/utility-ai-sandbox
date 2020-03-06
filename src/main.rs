@@ -70,7 +70,7 @@ pub enum MyGameInput {
   DistanceTo { location: Location, max_range: f32 },
 }
 
-impl<'a> Scorable<'a> for MyGameInput {
+impl<'a> Score<'a> for MyGameInput {
   type Context = MyGameContext<'a>;
 
   fn score(&self, context: &Self::Context) -> f32 {
@@ -108,14 +108,18 @@ fn main() {
   pretty_env_logger::init();
 
   let raw = include_str!("../resources/test_data.json");
-  let decisions = serde_json::from_str::<Vec<Decision<MyGameInput>>>(raw).unwrap();
-  log::info!("{:#?}", decisions);
+  let decision_maker = serde_json::from_str::<DecisionMaker<MyGameInput>>(raw).unwrap();
+
+  // dbg!(&decision_maker);
 
   let mut agent = Agent::new(String::from("Crash Test Dummy"));
-  agent.tick(50.0);
+  agent.tick(80.0);
 
-  let context = MyGameContext { agent: &agent };
+  // dbg!(&agent);
 
-  let score = decisions[0].score(&context);
-  log::info!("{}: {}", decisions[0].name, score);
+  let context = &MyGameContext { agent: &agent };
+
+  let result = decision_maker.evaluate(context);
+
+  dbg!(&result);
 }
