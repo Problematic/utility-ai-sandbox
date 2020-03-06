@@ -21,14 +21,15 @@ impl State {
   }
 }
 
-pub enum Action {
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+pub enum MyGameAction {
   Eat,
   Sleep,
   Work,
   Socialize,
 }
 
-impl Action {
+impl MyGameAction {
   pub fn execute(self, agent: &mut Agent, target: Option<&Agent>) {
     match self {
       Self::Eat => {
@@ -108,7 +109,8 @@ fn main() {
   pretty_env_logger::init();
 
   let raw = include_str!("../resources/test_data.json");
-  let decision_maker = serde_json::from_str::<DecisionMaker<MyGameInput>>(raw).unwrap();
+  let decision_maker =
+    serde_json::from_str::<DecisionMaker<MyGameInput, MyGameAction>>(raw).unwrap();
 
   // dbg!(&decision_maker);
 
@@ -119,7 +121,11 @@ fn main() {
 
   let context = &MyGameContext { agent: &agent };
 
-  let result = decision_maker.evaluate(context);
+  let (decision, score) = decision_maker.evaluate(context);
 
-  dbg!(&result);
+  if let Some(decision) = decision {
+    log::debug!("Selected '{}' with a score of {}", decision.name, score);
+
+    decision.action().execute(&mut agent, None);
+  }
 }

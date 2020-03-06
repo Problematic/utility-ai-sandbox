@@ -3,21 +3,33 @@ use super::traits::Score;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Decision<TInput> {
+pub struct Decision<TInput, TAction>
+where
+  TAction: Copy,
+{
   pub name: String,
   weight: f32,
   considerations: Vec<Consideration<TInput>>,
+  action: TAction,
 }
 
-impl<TInput> Decision<TInput> {
+impl<TInput, TAction> Decision<TInput, TAction>
+where
+  TAction: Copy,
+{
   pub fn weight(&self) -> f32 {
     self.weight
   }
+
+  pub fn action(&self) -> TAction {
+    self.action
+  }
 }
 
-impl<'a, TInput> Score<'a> for Decision<TInput>
+impl<'a, TInput, TAction> Score<'a> for Decision<TInput, TAction>
 where
   TInput: Score<'a>,
+  TAction: Copy,
 {
   type Context = TInput::Context;
 

@@ -21,7 +21,8 @@
           },
           "response_curve": "InverseLinear"
         }
-      ]
+      ],
+      "action": "Eat"
     },
     {
       "name": "Go to Work",
@@ -39,7 +40,8 @@
             "Polynomial": [-1.0, 2.0, 1.0, 0.0]
           }
         }
-      ]
+      ],
+      "action": "Work"
     }
   ]
 }
