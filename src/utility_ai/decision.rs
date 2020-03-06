@@ -1,20 +1,18 @@
 use super::consideration::Consideration;
-use super::traits::Score;
+use super::traits::Input;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Decision<TInput, TAction>
-where
-  TAction: Copy,
-{
+pub struct Decision<TInput, TAction> {
   pub name: String,
   weight: f32,
   considerations: Vec<Consideration<TInput>>,
   action: TAction,
 }
 
-impl<TInput, TAction> Decision<TInput, TAction>
+impl<'a, TInput, TAction> Decision<TInput, TAction>
 where
+  TInput: Input<'a>,
   TAction: Copy,
 {
   pub fn weight(&self) -> f32 {
@@ -24,17 +22,9 @@ where
   pub fn action(&self) -> TAction {
     self.action
   }
-}
-
-impl<'a, TInput, TAction> Score<'a> for Decision<TInput, TAction>
-where
-  TInput: Score<'a>,
-  TAction: Copy,
-{
-  type Context = TInput::Context;
 
   #[allow(clippy::cast_precision_loss)]
-  fn score(&self, context: &TInput::Context) -> f32 {
+  pub fn score(&self, context: &TInput::Context) -> f32 {
     if self.considerations.is_empty() {
       return 0.0;
     }

@@ -71,7 +71,7 @@ pub enum MyGameInput {
   DistanceTo { location: Location, max_range: f32 },
 }
 
-impl<'a> Score<'a> for MyGameInput {
+impl<'a> Input<'a> for MyGameInput {
   type Context = MyGameContext<'a>;
 
   fn score(&self, context: &Self::Context) -> f32 {

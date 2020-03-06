@@ -1,18 +1,15 @@
 use super::decision::Decision;
-use super::traits::Score;
+use super::traits::Input;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct DecisionMaker<TInput, TAction>
-where
-  TAction: Copy,
-{
+pub struct DecisionMaker<TInput, TAction> {
   decisions: Vec<Decision<TInput, TAction>>,
 }
 
 impl<'a, TInput, TAction> DecisionMaker<TInput, TAction>
 where
-  TInput: Score<'a>,
+  TInput: Input<'a>,
   TAction: Copy,
 {
   #[must_use]

@@ -1,8 +1,5 @@
-pub trait Score<'a>
-where
-  Self::Context: 'a,
-{
-  type Context;
+pub trait Input<'a> {
+  type Context: 'a;
 
   #[must_use]
   fn score(&self, context: &Self::Context) -> f32;

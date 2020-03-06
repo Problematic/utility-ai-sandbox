@@ -8,4 +8,4 @@ pub use self::consideration::Consideration;
 pub use self::decision::Decision;
 pub use self::decision_maker::DecisionMaker;
 pub use self::response_curve::ResponseCurve;
-pub use self::traits::Score;
+pub use self::traits::Input;
