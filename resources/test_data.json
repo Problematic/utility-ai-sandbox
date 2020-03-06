@@ -1,47 +1,51 @@
 {
   "decisions": [
     {
-      "name": "Eat a Meal",
       "weight": 1.0,
-      "considerations": [
-        {
-          "name": "Do I need to eat?",
-          "input": { "NeedLevel": "Hunger" },
-          "response_curve": {
-            "Polynomial": [-1.0, 2.0, 1.0, 1.0]
-          }
-        },
-        {
-          "name": "Am I near the cafeteria?",
-          "input": {
-            "DistanceTo": {
-              "location": "Cafeteria",
-              "max_range": 4.0
+      "item": {
+        "name": "Eat a Meal",
+        "considerations": [
+          {
+            "name": "Do I need to eat?",
+            "input": { "NeedLevel": "Hunger" },
+            "response_curve": {
+              "Polynomial": [-1.0, 2.0, 1.0, 1.0]
             }
           },
-          "response_curve": "InverseLinear"
-        }
-      ],
-      "action": "Eat"
+          {
+            "name": "Am I near the cafeteria?",
+            "input": {
+              "DistanceTo": {
+                "location": "Cafeteria",
+                "max_range": 4.0
+              }
+            },
+            "response_curve": "InverseLinear"
+          }
+        ],
+        "action": "Eat"
+      }
     },
     {
-      "name": "Go to Work",
       "weight": 1.0,
-      "considerations": [
-        {
-          "name": "Do I want to work?",
-          "input": { "NeedLevel": "Labor" },
-          "response_curve": "Linear"
-        },
-        {
-          "name": "Am I well-rested?",
-          "input": { "NeedLevel": "Energy" },
-          "response_curve": {
-            "Polynomial": [-1.0, 2.0, 1.0, 0.0]
+      "item": {
+        "name": "Go to Work",
+        "considerations": [
+          {
+            "name": "Do I want to work?",
+            "input": { "NeedLevel": "Labor" },
+            "response_curve": "Linear"
+          },
+          {
+            "name": "Am I well-rested?",
+            "input": { "NeedLevel": "Energy" },
+            "response_curve": {
+              "Polynomial": [-1.0, 2.0, 1.0, 0.0]
+            }
           }
-        }
-      ],
-      "action": "Work"
+        ],
+        "action": "Work"
+      }
     }
   ]
 }

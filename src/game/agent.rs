@@ -75,7 +75,7 @@ impl Agent {
     self.needs.labor += res;
 
     log::info!(
-      "{} works for {} hours, restoring {} labor ({} -> {}",
+      "{} works for {} hours, restoring {} labor ({} -> {})",
       self.name,
       duration,
       res,

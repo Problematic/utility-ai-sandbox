@@ -1,10 +1,11 @@
 use super::decision::Decision;
 use super::traits::Input;
+use super::Weighted;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DecisionMaker<TInput, TAction> {
-  decisions: Vec<Decision<TInput, TAction>>,
+  decisions: Vec<Weighted<Decision<TInput, TAction>>>,
 }
 
 impl<'a, TInput, TAction> DecisionMaker<TInput, TAction>
@@ -17,12 +18,16 @@ where
     let mut threshold = 0.0;
     let mut selected = None;
 
-    for decision in &self.decisions {
-      if decision.weight() <= threshold {
+    for Weighted {
+      item: decision,
+      weight,
+    } in &self.decisions
+    {
+      if *weight <= threshold {
         continue;
       }
 
-      let score = decision.weight() * decision.score(context);
+      let score = decision.score(context, *weight);
       log::debug!("{}: {}", decision.name, score);
 
       if score > threshold {
